@@ -1,7 +1,19 @@
 # Plan de Tests : Service de Triangulation
 
-Ce plan détaille les vérifications essentielles pour valider le bon fonctionnement du service de triangulation (T) et son interaction avec le gestionnaire de jeux de points (PSM).
+Ce plan détaille les vérifications essentielles pour valider le bon fonctionnement du service de triangulation (T) et son interaction avec le gestionnaire de jeux de points (PSM) et le Client (C).
 
+> **Périmètre du Test :** Les tests suivants se concentrent exclusivement sur le composant **Triangulateur (T)** et sur la qualité de ses **interactions** avec le **PointSetManager (PSM)** et le **Client (C)**. Je considère que le PSM et le C fonctionnent correctement.
+>
+> **Méthodologie :** Pour isoler et contrôler les interactions, le PSM et le Client seront **simulés (mockés)**. Des fonctions mock seront utilisées pour produire les résultats et les comportements (succès ou échecs) attendus, en fonction des scénarios de test à réaliser.
+>
+> **Séparation des Tests (Exigences de Performance) :** Les tests sont classés en deux catégories pour répondre aux contraintes d'exécution :
+> 1. **Tests Rapides :** Couvrent les sections **1, 2, et 6** (Connexion, Intégrité, Robustesse). Ces tests sont rapides et doivent être exécutés en continu.
+> 2. **Tests Lourds  :** Couvrent les sections **3, 4 et 5** (Conversion, Algorithme, Performance, Qualité). Ces tests peuvent être longs et doivent pouvoir être exécutés séparément.
+>
+> Les protocoles de test seront construits pour permettre l'exécution de :
+> * **Tous les tests.**
+> * **Tous les tests sauf les tests lourds (Sections 3, 4, 5).**
+> * **Uniquement les tests lourds (Sections 3, 4, 5).**
 ---
 
 ## 1. Tests de Connexion et Flux (End-to-End)
