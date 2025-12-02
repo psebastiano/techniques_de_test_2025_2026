@@ -1,0 +1,20 @@
+{
+    "python.defaultInterpreterPath": "./tdt/Scripts/python.exe",
+
+    // *** Définition du profil personnalisé ***
+    "terminal.integrated.profiles.windows": {
+        "PowerShell (venv) Custom": { // Renommons-le légèrement pour éviter tout conflit
+            "path": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+            "args": [
+                "-ExecutionPolicy", "Bypass", 
+                "-NoExit",
+                "-Command", ". ./tdt/Scripts/Activate.ps1"
+            ],
+            "icon": "terminal-powershell"
+        }
+    },
+    
+    // *** Utilisation du profil personnalisé comme défaut ***
+    // Ceci est la ligne qui posait problème, elle doit pointer vers le nom défini ci-dessus.
+    "terminal.integrated.defaultProfile.windows": "PowerShell (venv) Custom" 
+}

@@ -1,0 +1,1 @@
+"""Validate a triangle variable - Maybe not useful."""
