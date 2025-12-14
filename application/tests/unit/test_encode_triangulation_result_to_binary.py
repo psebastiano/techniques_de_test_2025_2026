@@ -15,4 +15,8 @@ def test_01_encode_triangulation_result_to_binary(
     
     actual = encode_triangulation_result_to_binary(geometric)
     
+    print("expected : ", expected)
+    print("actual : ", actual)
+    
+
     assert actual == expected

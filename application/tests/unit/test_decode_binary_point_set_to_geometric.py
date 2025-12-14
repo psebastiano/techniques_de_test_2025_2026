@@ -11,6 +11,7 @@ def test_01_decode_binary_point_set_to_geometric(point_set_binary_geometric_pair
     expected = point_set_binary_geometric_pairs["decoded_geometric"]
     binary = point_set_binary_geometric_pairs["encoded_binary"]
 
-    actual = decode_binary_point_set_to_geometric(binary)
+    tol = 0.001
+    actual = decode_binary_point_set_to_geometric(binary, tol)
     
     assert actual == expected

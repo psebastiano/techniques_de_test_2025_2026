@@ -1,12 +1,13 @@
 """Fichier de configuration de Pytest Défintion des fixtures."""
 import http.client
+import random
 import struct
 from typing import cast
 from unittest.mock import Mock, patch
 
 import pytest
 
-from application.types import PointSet_Geom, Triangles_Geom, Triangulation_Result
+from application.custom_types import PointSet_Geom, Triangles_Geom, Triangulation_Result
 
 
 # Fixture - test_check_valid_uuid.py
@@ -23,7 +24,12 @@ def uuid_str_valide(request):
     " a1b2c3d4-e5f6-7890-1234-567890abcdef",  # Space at beginning
     "a1b2c3d4-e5f6-7890-1234-567890abcdef ",  # Space at end
     "not_a_uuid",  #Evident
-    "FFFFFFFF-FFFF-FFFF-FFFF"   # Not long enough
+    "FFFFFFFF-FFFF-FFFF-FFFF",
+    12345,                                    # Integer
+    None,                                     # NoneType
+    True,                                     # Boolean
+    b'some_bytes',                            # Bytes
+    {'key': 'value'}                          # Dictionary   # Not long enough
 ])
 def uuid_str_non_valide(request):
     """Fournit des UUID non valides en entrée pour tester l'échec."""
@@ -52,7 +58,7 @@ def uuid_str_non_valide(request):
     # N=1, x = 5.5, y=12.3
     # N=2, x = 1, y=13
     {
-        "encoded_binary": struct.pack('Iffff', 2, 5.5, 12.3, 1, 13),
+        "encoded_binary": struct.pack('Iffff', 2, 5.5, 12.3, 1.0, 13.0),
         "decoded_geometric": cast(PointSet_Geom, [
             {'x': 5.5, "y": 12.3}, 
             {'x': 1, "y": 13}
@@ -99,15 +105,14 @@ def point_set_binary_geometric_pairs(request):
             ],
             'triangles':[
                 {'v1': 0, 'v2': 1, 'v3': 2},
-                {'v1': 0, 'v2': 1, 'v4': 2},
-                
+                {'v1': 0, 'v2': 1, 'v3': 3},   
             ]
         }),
         "encoded_binary_expected":(
-            struct.pack('I', 3) + 
-            struct.pack('ffffff', 0.0, 0.0, 1.0, 0.0, 0.0, 1.0) + 
-            struct.pack('I', 1) + 
-            struct.pack('III', 0, 1, 2)
+            struct.pack('I', 4) + 
+            struct.pack('ffffffff', 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 1.0, 1.0) + 
+            struct.pack('I', 2) + 
+            struct.pack('IIIIII', 0, 1, 2, 0, 1, 3)
             
         )
     },
@@ -175,9 +180,9 @@ def mock_psm_connection(request):
 
 # Case 1 - Minimal required input (3 non colinear points -> 1 Triangle)
 INPUT_1_pointSet: PointSet_Geom = cast(PointSet_Geom, [
-    {'x': 0.0, 'y': 0.0}, #Index 
-    {'x': 10.0, 'y': 0.0}, #Index 
-    {'x': 5.0, 'y': 10.0}, #Index 
+    {'x': 0.0, 'y': 0.0}, #Index 0
+    {'x': 10.0, 'y': 0.0}, #Index 1
+    {'x': 5.0, 'y': 10.0}, #Index 2
 ])
 OUTPUT_1_triangles = Triangles_Geom = cast(Triangles_Geom, [
     {'v1': 0, 'v2': 1, 'v3': 2}
@@ -186,50 +191,113 @@ OUTPUT_1_Triangulation_Result = {
     'points' : INPUT_1_pointSet,
     'triangles' : OUTPUT_1_triangles
 }
-MESSAGE_1 = "Success."
+MESSAGE_1 = "Succes."
 
 # Case 2 - A square (4 points, 2 triangles)
 INPUT_2_pointSet: PointSet_Geom = cast(PointSet_Geom, [
-    {'x': 0.0, 'y': 0.0}, #Index 
-    {'x': 10.0, 'y': 0.0}, #Index 
-    {'x': 10.0, 'y': 10.0}, #Index
-    {'x': 0.0, 'y': 10.0}, #Index 
+    {'x': 0.0, 'y': 0.0}, #Index 0
+    {'x': 10.0, 'y': 0.0}, #Index 1
+    {'x': 10.0, 'y': 10.0}, #Index 2
+    {'x': 0.0, 'y': 10.0}, #Index 3
 ])
-# ??? Input 2 can make two valid outputs ... how to check ???
+# Note: The test function already handles the two valid output possibilities by normalizing the triangles.
 OUTPUT_2_triangles = cast(Triangles_Geom, [ 
-    {'v1': 0, 'v2': 1, 'v3': 2},
-    {'v1': 0, 'v2': 2, 'v3': 3}
+    {'v1': 0, 'v2': 1, 'v3': 3},
+    {'v1': 1, 'v2': 2, 'v3': 3}
 ])
 OUTPUT_2_Triangulation_Result = {
     'points' : INPUT_2_pointSet,
     'triangles' : OUTPUT_2_triangles
 }
-MESSAGE_2 = "Success."
+MESSAGE_2 = "Succes."
 
 # Case 3 - Empty Input - Should raise an error
 INPUT_3_pointSet: PointSet_Geom = cast(PointSet_Geom, [])
 OUTPUT_3_triangles = None
 OUTPUT_3_Triangulation_Result = None
-MESSAGE_3 = "Empty input."
+MESSAGE_3 = "Le PointSet est vide"
 
 # Case 4 - Too few points - Should raise an error
 INPUT_4_pointSet: PointSet_Geom = cast(PointSet_Geom, [
-    {'x': 1.0, 'y': 1.0}, #Index 
-    {'x': 2.0, 'y': 2.0} #Index 
+    {'x': 1.0, 'y': 1.0}, #Index 0
+    {'x': 2.0, 'y': 2.0} #Index 1
 ])
 OUTPUT_4_triangles = None
 OUTPUT_4_Triangulation_Result = None
-MESSAGE_4 = "Not enough Points : Input must contain at least 3 points."
+MESSAGE_4 = "Pas assez de points : le PointSet doit contenir au moins trois points"
 
 #Case 5 - Collinear Points (Failure)
 INPUT_5_pointSet: PointSet_Geom = cast(PointSet_Geom, [
-    {'x': 1.0, 'y': 1.0}, #Index 
-    {'x': 2.0, 'y': 2.0}, #Index 
-    {'x': 3.0, 'y': 3.0} #Index
+    {'x': 1.0, 'y': 1.0}, #Index 0
+    {'x': 2.0, 'y': 2.0}, #Index 1
+    {'x': 3.0, 'y': 3.0} #Index 2
 ])
 OUTPUT_5_triangles = None
 OUTPUT_5_Triangulation_Result = None
-MESSAGE_5 = "Collinear Points."
+MESSAGE_5 = "Tous les points sont alignés."
+
+# Case 6 - Grid of 12 points (3x4 grid) -> 6 Triangles
+INPUT_6_pointSet: PointSet_Geom = cast(PointSet_Geom, [
+    {'x': 0.0, 'y': 0.0}, {'x': 5.0, 'y': 0.0}, {'x': 10.0, 'y': 0.0}, {'x': 15.0, 'y': 0.0},  # Indices 0-3
+    {'x': 0.0, 'y': 5.0}, {'x': 5.0, 'y': 5.0}, {'x': 10.0, 'y': 5.0}, {'x': 15.0, 'y': 5.0},  # Indices 4-7
+    {'x': 0.0, 'y': 10.0}, {'x': 5.0, 'y': 10.0}, {'x': 10.0, 'y': 10.0}, {'x': 15.0, 'y': 10.0} # Indices 8-11
+])
+OUTPUT_6_Triangulation_Result = {
+    'points': INPUT_6_pointSet, 
+    'triangles': cast(Triangles_Geom, [
+        {'v1': 0, 'v2': 1, 'v3': 4}, {'v1': 4, 'v2': 8, 'v3': 9}, 
+        {'v1': 2, 'v2': 4, 'v3': 5}, {'v1': 5, 'v2': 6, 'v3': 10}, 
+        {'v1': 2, 'v2': 3, 'v3': 7}, {'v1': 7, 'v2': 10, 'v3': 11}
+    ])
+}
+MESSAGE_6 = "Succes."
+
+# Case 7 - Two clusters of points (15 points) -> 7 Triangles
+INPUT_7_pointSet: PointSet_Geom = cast(PointSet_Geom, [
+    {'x': 2.0, 'y': 2.0}, {'x': 3.0, 'y': 1.0}, {'x': 4.0, 'y': 3.0}, {'x': 1.0, 'y': 4.0}, {'x': 2.5, 'y': 2.5},  
+    {'x': 8.0, 'y': 7.0}, {'x': 9.0, 'y': 6.0}, {'x': 10.0, 'y': 8.0}, {'x': 7.0, 'y': 9.0}, {'x': 8.5, 'y': 7.5},  
+    {'x': 5.0, 'y': 5.0}, {'x': 6.0, 'y': 4.0}, {'x': 7.0, 'y': 6.0}, {'x': 4.0, 'y': 7.0}, {'x': 5.5, 'y': 5.5}
+])
+OUTPUT_7_Triangulation_Result = {
+    'points': INPUT_7_pointSet, 
+    'triangles': cast(Triangles_Geom, [
+        {'v1': 0, 'v2': 3, 'v3': 4}, {'v1': 0, 'v2': 1, 'v3': 2}, {'v1': 10, 'v2': 13, 'v3': 14}, 
+        {'v1': 2, 'v2': 10, 'v3': 11}, {'v1': 5, 'v2': 12, 'v3': 14}, {'v1': 5, 'v2': 8, 'v3': 9}, 
+        {'v1': 5, 'v2': 6, 'v3': 7}
+    ])
+}
+MESSAGE_7 = "Succes."
+
+# Case 8 - Scattered and clustered points (28 points) -> 12 Triangles
+INPUT_8_pointSet: PointSet_Geom = cast(PointSet_Geom, [
+    {'x': 2.0, 'y': 2.0}, {'x': 2.5, 'y': 1.5}, {'x': 1.5, 'y': 2.5}, {'x': 3.0, 'y': 3.0}, {'x': 2.2, 'y': 2.8}, 
+    {'x': 8.0, 'y': 5.0}, {'x': 9.0, 'y': 4.0}, {'x': 7.0, 'y': 6.0}, {'x': 10.0, 'y': 5.5}, {'x': 8.5, 'y': 5.5}, 
+    {'x': 5.0, 'y': 9.0}, {'x': 5.0, 'y': 10.0}, {'x': 5.0, 'y': 8.0}, {'x': 4.5, 'y': 9.5}, {'x': 5.5, 'y': 8.5}, 
+    {'x': 5.0, 'y': 1.0}, {'x': 6.0, 'y': 1.0}, {'x': 4.0, 'y': 1.0}, {'x': 7.0, 'y': 1.0}, {'x': 3.0, 'y': 1.0}, 
+    {'x': 15.0, 'y': 15.0}, {'x': -5.0, 'y': -5.0}, {'x': 20.0, 'y': 0.0}, {'x': 0.0, 'y': 20.0}, 
+    {'x': 12.0, 'y': 8.0}, {'x': 3.0, 'y': 12.0}, {'x': 14.0, 'y': 3.0}, {'x': 1.0, 'y': 7.0}
+])
+OUTPUT_8_Triangulation_Result = {
+    'points': INPUT_8_pointSet, 
+    'triangles': cast(Triangles_Geom, [
+        {'v1': 0, 'v2': 2, 'v3': 21}, {'v1': 11, 'v2': 23, 'v3': 25}, {'v1': 12, 'v2': 13, 'v3': 27}, 
+        {'v1': 2, 'v2': 3, 'v3': 4}, {'v1': 1, 'v2': 17, 'v3': 19}, {'v1': 10, 'v2': 12, 'v3': 14}, 
+        {'v1': 5, 'v2': 7, 'v3': 9}, {'v1': 5, 'v2': 6, 'v3': 8}, {'v1': 8, 'v2': 9, 'v3': 24}, 
+        {'v1': 6, 'v2': 8, 'v3': 26}, {'v1': 8, 'v2': 20, 'v3': 24}, {'v1': 22, 'v2': 24, 'v3': 26}
+    ])
+}
+MESSAGE_8 = "Succes."
+
+# Case 9 - Fail Duplicate Points (Two identical points)
+INPUT_9_pointSet: PointSet_Geom = cast(PointSet_Geom, [
+    {'x': 10.0, 'y': 10.0},
+    {'x': 5.0, 'y': 5.0},
+    {'x': 10.0, 'y': 10.0}, # Duplicate of the first point
+    {'x': 0.0, 'y': 10.0},
+])
+OUTPUT_9_Triangulation_Result = None # Should fail before producing triangles
+MESSAGE_9 = "Point Set non valide : au moins deux points sont identiques : tous doivent être différents"
+
 
 @pytest.fixture(params=[
     #Structure: {case_id, INPUT_pointSet, OUTPUT_triangulation, expected_message}
@@ -262,7 +330,31 @@ MESSAGE_5 = "Collinear Points."
         "INPUT_pointSet": INPUT_5_pointSet,
         "OUTPUT_triangulation": OUTPUT_5_Triangulation_Result,
         "expected_message": MESSAGE_5,
-    }
+    },
+    {
+        "case_id": "6_grid_12_points",
+        "INPUT_pointSet": INPUT_6_pointSet,
+        "OUTPUT_triangulation": OUTPUT_6_Triangulation_Result,
+        "expected_message": MESSAGE_6,
+    },
+    {
+        "case_id": "7_two_clusters_15_points",
+        "INPUT_pointSet": INPUT_7_pointSet,
+        "OUTPUT_triangulation": OUTPUT_7_Triangulation_Result,
+        "expected_message": MESSAGE_7,
+    },
+    {
+        "case_id": "8_scattered_28_points",
+        "INPUT_pointSet": INPUT_8_pointSet,
+        "OUTPUT_triangulation": OUTPUT_8_Triangulation_Result,
+        "expected_message": MESSAGE_8,
+    },
+    {
+        "case_id": "9_Fail_Duplicate_Points",
+        "INPUT_pointSet": INPUT_9_pointSet,
+        "OUTPUT_triangulation": OUTPUT_9_Triangulation_Result,
+        "expected_message": MESSAGE_9,
+    },
 ])
 def triangulation_geometric_pairs(request):
     """Provide IO pairs and expected error messages for triangulation tests."""
@@ -271,6 +363,50 @@ def triangulation_geometric_pairs(request):
 ########################################################
 ########################################################
 
+#Test triangulation compute - Performance test : measure time on a 1000 random point pointSet
+N_PERFORMANCE_POINTS = 1000
+MAX_COORD = 1000.0
+
+# Generate 1000 random, non-duplicate points within a 1000x1000 square
+random.seed(42) # Ensure reproducibility
+INPUT_10_pointSet: PointSet_Geom = cast(PointSet_Geom, [
+    {'x': round(random.uniform(0, MAX_COORD), 2), 
+     'y': round(random.uniform(0, MAX_COORD), 2)}
+    for _ in range(N_PERFORMANCE_POINTS)
+])
+
+# Remove potential duplicates created by rounding (important for the algorithm)
+unique_points = []
+seen_coords = set()
+for p in INPUT_10_pointSet:
+    coords = (p['x'], p['y'])
+    if coords not in seen_coords:
+        seen_coords.add(coords)
+        unique_points.append(p)
+        
+INPUT_10_pointSet = unique_points
+N_ACTUAL = len(INPUT_10_pointSet)
+
+OUTPUT_10_Triangulation_Result = {
+    'points': INPUT_10_pointSet,
+    # Triangles will be calculated by the test itself
+    'triangles': cast(Triangles_Geom, []) 
+}
+MESSAGE_10 = f"Performance test with {N_ACTUAL} unique points."
+
+
+@pytest.fixture(params=[
+    {
+        "case_id": "10_Performance_1000_Points",
+        "INPUT_pointSet": INPUT_10_pointSet,
+        "OUTPUT_triangulation": OUTPUT_10_Triangulation_Result,
+        "expected_message": MESSAGE_10,
+        "expected_n_points": N_ACTUAL,
+    },
+], scope='session') # Use session scope for large fixtures
+def triangulation_performance_set(request):
+    """Provide a large, random point set for performance testing."""
+    return request.param
 
 
 # ------------- Test validate_point_set ---------------#
@@ -285,7 +421,7 @@ _1_PointSet = (
                 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1,   #Pts 1 to 5
                 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0) #Pts 6 to 10
 )
-_1_expected_result = "None"
+_1_expected_result = None
 _1_message = "None"
 
 # Case 2 - Not-valid Point Set
@@ -310,7 +446,7 @@ _3_PointSet = (
 _3_expected_result = "Exception"
 _3_message = "Warning - Number of points close to maximum storageble amount"
 
-# Case 4 - Corrupted file
+# Case 4 - Corrupted file (No mathematical meaning (NaN, +-inf))
 case_4_id = "4_Corrupted_PointSet"
 N_4 = 1
 _4_PointSet = (
@@ -318,7 +454,24 @@ _4_PointSet = (
     b'\xff\xff\xff\xff\xff\xff\xff\xff'  # 8 bytes de corruption
 )
 _4_expected_result = "Exception"
-_4_message = "Not-valid PointSet - Corrupted content"
+_4_message = """Not-valid PointSet - Corrupted content 
+                         (NaN, +- inf : no mathematical meaning"""
+
+# Case 5 - Entrée non binaire
+case_5_id = "5_Fail - Non-bytes input"
+N_5 = None # L'entrée est une chaîne, pas bytes
+_5_PointSet = "Ceci est une chaîne de caractères, pas un binaire."
+_5_expected_result = "Exception"
+_5_message = "Not-valid PointSet - Input must be bytes"
+
+# Case 6 - Too short (less than 4 bytes)
+case_6_id = "6_Fail - Too short"
+N_6 = None # N is not fully present
+_6_PointSet = b'\x01\x02\x03' # Length 3, which is < 4 (HEADER_SIZE)
+_6_expected_result = "Exception"
+_6_message = "Le PointSet est trop court."
+
+
 @pytest.fixture(params=[
     {
         "case_id" : case_1_id,
@@ -343,6 +496,18 @@ _4_message = "Not-valid PointSet - Corrupted content"
         "PointSet" : _4_PointSet,
         "result" : _4_expected_result,
         "message" : _4_message
+    },
+    {
+        "case_id" : case_5_id,
+        "PointSet" : _5_PointSet,
+        "result" : _5_expected_result,
+        "message" : _5_message
+    },
+    {
+        "case_id" : case_6_id,
+        "PointSet" : _6_PointSet,
+        "result" : _6_expected_result,
+        "message" : _6_message
     },
 ])
 def pointSets(request):

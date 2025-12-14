@@ -1,3 +1,6 @@
+[tool.ruff]
+line-length = 120
+
 [tool.ruff.lint]
 select = [
     "D",
@@ -7,4 +10,17 @@ select = [
     "B",
     "SIM",
     "I",
+]
+
+[tool.coverage.report]
+# La section 'report' est la plus courante pour définir les exclusions
+exclude_lines = [
+    "pragma: no cover",           # Exclut les lignes manuellement marquées
+]
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "--strict-markers" # Highly recommended: makes Pytest fail if an unregistered mark is used
+markers = [
+    "performance: Tests that measure execution time for large data sets and should be run separately (e.g., using 'make test_perf').",
 ]

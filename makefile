@@ -17,10 +17,23 @@ COVERAGE_REPORT := $(PYTHON) -m coverage html
 # CIBLES PRINCIPALES (PHONES)
 # ******************************************************
 
-.PHONY: test
-test: coverage
-	@echo "Running Pytest tests..."
+test_all:
+	@echo "Running ALL tests (including performance tests)..."
 	$(PYTEST)
+
+test_unit:
+	@echo "Running Unit/Integration tests ONLY (excluding performance tests)..."
+	$(PYTEST) -m "not performance"
+
+test_perf:
+	@echo "Running PERFORMANCE tests ONLY..."
+	$(PYTEST) -m "performance"
+
+
+.PHONY: test_debug
+test_debug:
+	@echo "Running Pytest tests with debug output (-s flag)..."
+	$(PYTEST) -s
 
 .PHONY: quality
 quality:
@@ -46,7 +59,7 @@ coverage_report:
 
 .PHONY: clean
 clean:
-	@echo "🗑️ Suppression des fichiers de cache et de la documentation..."
+	@echo "Suppression des fichiers de cache et de la documentation..."
 	find . -type d -name "__pycache__" -exec rm -rf {} +
 	find . -type f -name "*.pyc" -delete
 	rm -rf html htmlcov .coverage # <-- Ajoute htmlcov et .coverage

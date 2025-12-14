@@ -10,8 +10,10 @@ from werkzeug.exceptions import (
     InternalServerError,
 )
 
-from application.triangulator_app import triangulation_pipeline
-from application.types import PointSet_Geom, Triangles_Geom
+import application
+
+# from application import triangulator_app
+from application.custom_types import PointSet_Geom, Triangles_Geom
 
 VALID_UUID = str(uuid.uuid4())
 
@@ -60,7 +62,7 @@ Mock_Triangulation_Bytes = (
 # -> decode_binary_to_geometric - Not Executed
 # -> triangulation_compute - Not executed
 # -> encode_geometric_to_binary - Not executed
-@patch('triangulation_pipeline.validate_point_set')
+@patch('application.triangulator_app.validate_point_set')
 def test_01_triangulation_pipeline_validate_point_set_fail(
     mock_validate_point_set: Mock):
     """Test unitaire pipeline - Echec sur validate_point_set."""
@@ -70,7 +72,7 @@ def test_01_triangulation_pipeline_validate_point_set_fail(
     mock_validate_point_set.side_effect = error
     
     with pytest.raises(InternalServerError) as excinfo:
-        triangulation_pipeline(valid_PointSet)
+        application.triangulator_app.triangulation_pipeline(valid_PointSet)
     
     mock_validate_point_set.assert_called_once_with(valid_PointSet)
     assert MOCK_ERROR_MESSAGE in str(excinfo.value)
@@ -81,9 +83,9 @@ def test_01_triangulation_pipeline_validate_point_set_fail(
 # -> decode_binary_to_geometric - Fail
 # -> triangulation_compute - Not executed
 # -> encode_geometric_to_binary - Not executed
-@patch('triangulator_app.decode_binary_to_geometric')
-@patch('triangulator_app.validate_point_set')
-def test_01_triangulation_pipeline_decode_binary_to_geometric_fail(
+@patch('application.triangulator_app.decode_binary_point_set_to_geometric')
+@patch('application.triangulator_app.validate_point_set')
+def test_02_triangulation_pipeline_decode_binary_to_geometric_fail(
     mock_validate_point_set: Mock,
     mock_decode_binary_to_geometric: Mock,
     ):
@@ -95,7 +97,7 @@ def test_01_triangulation_pipeline_decode_binary_to_geometric_fail(
     mock_decode_binary_to_geometric.side_effect = error
 
     with pytest.raises(InternalServerError) as excinfo:
-        triangulation_pipeline(valid_PointSet)
+        application.triangulator_app.triangulation_pipeline(valid_PointSet)
     
     mock_validate_point_set.assert_called_once_with(valid_PointSet)
     mock_decode_binary_to_geometric.assert_called_once_with(valid_PointSet)
@@ -106,10 +108,10 @@ def test_01_triangulation_pipeline_decode_binary_to_geometric_fail(
 # -> decode_binary_to_geometric - Succes
 # -> triangulation_compute - Fail
 # -> encode_geometric_to_binary - Not executed
-@patch('triangulator_app.triangulation_compute')
-@patch('triangulator_app.decode_binary_to_geometric')
-@patch('triangulator_app.validate_point_set')
-def test_01_triangulation_pipeline_triangulation_compute_fail(
+@patch('application.triangulator_app.triangulation_compute')
+@patch('application.triangulator_app.decode_binary_point_set_to_geometric')
+@patch('application.triangulator_app.validate_point_set')
+def test_03_triangulation_pipeline_triangulation_compute_fail(
     mock_validate_point_set: Mock,
     mock_decode_binary_to_geometric: Mock,
     mock_triangulation_compute: Mock
@@ -123,7 +125,7 @@ def test_01_triangulation_pipeline_triangulation_compute_fail(
     mock_triangulation_compute.side_effect = error
 
     with pytest.raises(InternalServerError) as excinfo:
-        triangulation_pipeline(valid_PointSet)
+        application.triangulator_app.triangulation_pipeline(valid_PointSet)
     
     mock_validate_point_set.assert_called_once_with(valid_PointSet)
     mock_decode_binary_to_geometric.assert_called_once_with(valid_PointSet)
@@ -141,11 +143,11 @@ def test_01_triangulation_pipeline_triangulation_compute_fail(
     #Cas 500 - Internal Server Error
     ("Fail 500", InternalServerError, None, "encode_geometric_to_binary Fail - Reason"),
 ])
-@patch('triangulator_app.encode_geometric_to_binary')
-@patch('triangulator_app.triangulation_compute')
-@patch('triangulator_app.decode_binary_to_geometric')
-@patch('triangulator_app.validate_point_set')
-def test_01_triangulation_pipeline_(
+@patch('application.triangulator_app.encode_triangulation_result_to_binary')
+@patch('application.triangulator_app.triangulation_compute')
+@patch('application.triangulator_app.decode_binary_point_set_to_geometric')
+@patch('application.triangulator_app.validate_point_set')
+def test_04_triangulation_pipeline_(
     mock_validate_point_set: Mock,
     mock_decode_binary_to_geometric: Mock,
     mock_triangulation_compute: Mock,
@@ -160,17 +162,17 @@ def test_01_triangulation_pipeline_(
     mock_decode_binary_to_geometric.return_value = valid_pointSet_Geom #Succes case
     mock_triangulation_compute.return_value =  mock_triangles_Geom#Succe case
 
-    if case_id == "Success_200":
+    if case_id == "Succes_200":
         mock_encode_geometric_to_binary.return_value = result
         
-        actual_result = triangulation_pipeline(valid_PointSet)
+        actual_result = application.triangulator_app.triangulation_pipeline(valid_PointSet)
         assert actual_result == result 
     else :
         error = http_exception_type(message)
         mock_encode_geometric_to_binary.side_effect = error
 
         with pytest.raises(InternalServerError) as excinfo:
-            triangulation_pipeline(valid_PointSet)
+            application.triangulator_app.triangulation_pipeline(valid_PointSet)
         assert message in str(excinfo.value)
 
     mock_validate_point_set.assert_called_once_with(valid_PointSet)

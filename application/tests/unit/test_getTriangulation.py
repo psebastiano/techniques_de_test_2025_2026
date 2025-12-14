@@ -20,7 +20,7 @@ from application.triangulator_app import getTriangulation
 # -> psd fetch client data - Not executed
 # -> triangulation_pipeline - Not executed
 
-@patch('triangulator_app.check_valid_uuid')
+@patch('application.triangulator_app.check_valid_uuid')
 def test_01_getTriangulation_check_uuid_fail(mock_check_valid_uuid: Mock):
     """Tests unitaires orchestrateur - Cas d'échec sur check_valid_uuid."""
     INVALID_ID = "not_a_uuid"
@@ -50,9 +50,9 @@ VALID_UUID = str(uuid.uuid4())
     #Cas 503 - PSM answer 503 to fetch_data
     ("Fail 500", ServiceUnavailable, "PSM is not responding"),
 ])
-@patch('triangulator_app.triangulation_pipeline')
-@patch('triangulator_app.psm_client_fetch_data')
-@patch('triangulator_app.check_valid_uuid')
+@patch('application.triangulator_app.triangulation_pipeline')
+@patch('application.triangulator_app.psm_client_fetch_data')
+@patch('application.triangulator_app.check_valid_uuid')
 def test_02_getTriangulation_fetch_data_fail(
     mock_check_uuid: Mock,
     mock_fetch_data: Mock,
@@ -108,9 +108,9 @@ Mock_Triangulation_Bytes = (
     #Cas 500 - Internal Server Error
     ("Fail 500", InternalServerError, None, "Triangulation Failed"),
 ])
-@patch('triangulator_app.triangulation_pipeline')
-@patch('triangulator_app.psm_client_fetch_data')
-@patch('triangulator_app.check_valid_uuid')
+@patch('application.triangulator_app.triangulation_pipeline')
+@patch('application.triangulator_app.psm_client_fetch_data')
+@patch('application.triangulator_app.check_valid_uuid')
 def test_03_getTriangulation_triangulation_pipeline_fail(
     mock_check_uuid: Mock,
     mock_fetch_data: Mock,

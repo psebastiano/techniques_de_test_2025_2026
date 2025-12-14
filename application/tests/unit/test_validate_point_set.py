@@ -9,7 +9,7 @@ from application.triangulator_app import validate_point_set
 
 
 def test_01_validate_point_set(pointSets):
-    """Validate the itegritu of a PointSet."""
+    """Validate the itegrity of a PointSet."""
     case_id = pointSets["case_id"]
     PointSet = pointSets["PointSet"]
     expected_result = pointSets["result"]
@@ -17,11 +17,11 @@ def test_01_validate_point_set(pointSets):
 
     if case_id == "1_Valid PointSet" :
         actual_result = validate_point_set(PointSet)
+        print("actual_result : ", actual_result)
+        print("expected_result : ", expected_result)
+        
         assert expected_result == actual_result #None expected
-    elif case_id in ["2_Fail - Length mismatch", "3_Huge_N", 
-                     "4_Corrupted_PointSet"]:
+    else:
         with pytest.raises(Exception) as excinfo:
             validate_point_set(PointSet)
-        assert expected_message in str(excinfo)
-    else:
-        pytest.fail(f"Test setup error : Unknow case_id '{case_id}' encountered.")
+        assert expected_message.strip() in str(excinfo.value).strip()
